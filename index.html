@@ -12,14 +12,28 @@
         :root {
             --primary-color: #013369;
             --bg-color: #ffffff;
+            --body-bg: #f4f7f9;
+            --text-color: #2c3e50;
+            --card-bg: #ffffff;
             --cell-size: 110px;
             --mark-color: rgba(1, 51, 105, 0.1);
+            --setup-bg: #ffffff;
+        }
+
+        [data-theme="dark"] {
+            --body-bg: #121212;
+            --text-color: #e0e0e0;
+            --card-bg: #1e1e1e;
+            --setup-bg: #1e1e1e;
+            --mark-color: rgba(255, 255, 255, 0.15);
         }
 
         body { 
             font-family: 'Helvetica Neue', Arial, sans-serif; 
-            background: #f4f7f9; display: flex; flex-direction: column; 
+            background: var(--body-bg); color: var(--text-color);
+            display: flex; flex-direction: column; 
             align-items: center; padding: 10px; margin: 0; overflow-x: hidden;
+            transition: background 0.3s ease;
         }
 
         .nfl-logo {
@@ -28,15 +42,21 @@
         }
 
         #setup { 
-            background: white; padding: 25px; border-radius: 12px; width: 95%; max-width: 600px; 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05); margin-bottom: 20px; 
+            background: var(--setup-bg); padding: 25px; border-radius: 12px; width: 95%; max-width: 600px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2); margin-bottom: 20px; 
             border-top: 6px solid var(--primary-color); box-sizing: border-box;
             text-align: center;
         }
 
+        .dark-mode-toggle {
+            position: absolute; top: 15px; right: 15px;
+            background: #2c3e50; color: white; border: none; padding: 8px 12px;
+            border-radius: 20px; cursor: pointer; font-size: 0.8rem; font-weight: bold;
+        }
+
         .status-badge {
-            background: #eef2f7; padding: 12px; border-radius: 8px; margin: 0 auto 20px auto;
-            font-size: 0.85rem; border-left: 4px solid #3498db; color: #2c3e50; font-weight: 600;
+            background: rgba(0,0,0,0.05); padding: 12px; border-radius: 8px; margin: 0 auto 20px auto;
+            font-size: 0.85rem; border-left: 4px solid #3498db; color: var(--text-color); font-weight: 600;
             display: inline-block; width: 100%; box-sizing: border-box;
         }
 
@@ -46,6 +66,7 @@
         input, select { 
             width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #dfe6e9; 
             font-size: 0.9rem; box-sizing: border-box; outline-color: var(--primary-color);
+            background: var(--card-bg); color: var(--text-color);
         }
 
         .card-container { 
@@ -63,24 +84,17 @@
             width: var(--cell-size); height: var(--cell-size); border: 2px solid var(--primary-color); 
             display: flex; align-items: center; justify-content: center; padding: 8px; 
             box-sizing: border-box; background: var(--bg-color); cursor: pointer; 
-            position: relative; transition: all 0.2s ease;
-            overflow: hidden;
+            position: relative; transition: all 0.2s ease; overflow: hidden;
         }
 
         .cell.marked { background-color: var(--mark-color) !important; }
         .cell.marked::after { content: "🏈"; position: absolute; font-size: 2.5rem; opacity: 0.2; }
         
-        /* RESPONSIVE FONT SCALING */
         .cell span { 
             font-weight: 800; color: var(--primary-color); line-height: 1.1; 
             text-transform: uppercase; text-align: center; 
-            pointer-events: none;
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-            text-wrap: balance;
-            width: 100%;
-            /* Container Query logic via clamp */
-            font-size: clamp(0.55rem, 2.5cqw, 0.85rem); 
+            pointer-events: none; word-wrap: break-word; overflow-wrap: break-word;
+            text-wrap: balance; width: 100%; font-size: clamp(0.55rem, 2.5cqw, 0.85rem); 
         }
 
         .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
@@ -107,11 +121,12 @@
             .main-title { font-size: 1.1rem; }
             .bingo-header span { font-size: 1.4rem; }
             .cell span { font-size: clamp(0.45rem, 3.5vw, 0.65rem); }
-            .card-container { padding: 10px; border-width: 4px; }
         }
     </style>
 </head>
 <body>
+
+    <button class="dark-mode-toggle" onclick="toggleDarkMode()">🌙 Mode</button>
 
     <div id="bingo-alert">
         🏈 TOUCHDOWN BINGO! 🏈
@@ -132,52 +147,17 @@
                 <label for="themeSelect">Select Team</label>
                 <select id="themeSelect" onchange="applyTheme()">
                     <option value="nfl">NFL Official</option>
-                    <optgroup label="AFC East">
-                        <option value="bills">Buffalo Bills</option>
-                        <option value="dolphins">Miami Dolphins</option>
-                        <option value="patriots">New England Patriots</option>
-                        <option value="jets">New York Jets</option>
-                    </optgroup>
-                    <optgroup label="AFC North">
-                        <option value="ravens">Baltimore Ravens</option>
-                        <option value="bengals">Cincinnati Bengals</option>
-                        <option value="browns">Cleveland Browns</option>
-                        <option value="steelers">Pittsburgh Steelers</option>
-                    </optgroup>
-                    <optgroup label="AFC South">
-                        <option value="texans">Houston Texans</option>
-                        <option value="colts">Indianapolis Colts</option>
-                        <option value="jaguars">Jacksonville Jaguars</option>
-                        <option value="titans">Tennessee Titans</option>
-                    </optgroup>
-                    <optgroup label="AFC West">
-                        <option value="broncos">Denver Broncos</option>
-                        <option value="chiefs">Kansas City Chiefs</option>
-                        <option value="raiders">Las Vegas Raiders</option>
-                        <option value="chargers">LA Chargers</option>
-                    </optgroup>
-                    <optgroup label="NFC East">
-                        <option value="cowboys">Dallas Cowboys</option>
-                        <option value="giants">NY Giants</option>
-                        <option value="eagles">Philadelphia Eagles</option>
-                        <option value="commanders">Washington Commanders</option>
-                    </optgroup>
                     <optgroup label="NFC North">
-                        <option value="bears">Chicago Bears</option>
+                        <option value="vikings">Minnesota Vikings</option>
                         <option value="lions">Detroit Lions</option>
                         <option value="packers">Green Bay Packers</option>
-                        <option value="vikings">Minnesota Vikings</option>
+                        <option value="bears">Chicago Bears</option>
                     </optgroup>
-                    <optgroup label="NFC South">
-                        <option value="falcons">Atlanta Falcons</option>
-                        <option value="panthers">Carolina Panthers</option>
-                        <option value="saints">New Orleans Saints</option>
-                        <option value="buccaneers">Tampa Bay Buccaneers</option>
-                    </optgroup>
-                    <optgroup label="NFC West">
-                        <option value="cardinals">Arizona Cardinals</option>
-                        <option value="rams">LA Rams</option>
-                        <option value="fortyniners">San Francisco 49ers</option>
+                    <optgroup label="Other Teams">
+                        <option value="chiefs">KC Chiefs</option>
+                        <option value="eagles">Philly Eagles</option>
+                        <option value="buccaneers">Tampa Bay Bucs</option>
+                        <option value="cowboys">Dallas Cowboys</option>
                         <option value="seahawks">Seattle Seahawks</option>
                     </optgroup>
                 </select>
@@ -185,16 +165,9 @@
         </div>
 
         <div class="controls">
-            <button class="btn-gen" onclick="generateCard()">New Random Card</button>
+            <button class="btn-gen" onclick="generateCard()">New Card</button>
             <button class="btn-share" onclick="copyLink()">Invite Friends 🔗</button>
-            <button class="btn-reset" onclick="resetBoard()">Clear Marks Only</button>
-        </div>
-
-        <div id="win-history">
-            <h3>📺 Review Booth (Win History)</h3>
-            <div id="history-list">
-                <div style="color:#bdc3c7; font-size:0.8rem;">No wins recorded yet.</div>
-            </div>
+            <button class="btn-reset" onclick="resetBoard()">Clear Marks</button>
         </div>
     </section>
 
@@ -203,100 +176,70 @@
     <script>
         let peer, conn, connections = [], isHost = true, gameID = null;
 
+        function toggleDarkMode() {
+            const body = document.body;
+            const current = body.getAttribute('data-theme');
+            body.setAttribute('data-theme', current === 'dark' ? 'light' : 'dark');
+            applyTheme(); // Refresh mark colors
+        }
+
+        function playSound(team) {
+            const sounds = {
+                vikings: 'https://www.myinstants.com/media/sounds/skol-vikings.mp3', // Updated to SKOL
+                buccaneers: 'https://www.myinstants.com/media/sounds/cannon-shot.mp3',
+                seahawks: 'https://www.myinstants.com/media/sounds/hawk-sound.mp3',
+                eagles: 'https://www.myinstants.com/media/sounds/hawk-sound.mp3'
+            };
+            const url = sounds[team] || 'https://www.myinstants.com/media/sounds/air-horn.mp3';
+            new Audio(url).play().catch(e => console.log("Sound error: " + e));
+        }
+
         const themes = {
             nfl: { primary: "#013369", bg: "#ffffff" },
-            bills: { primary: "#00338D", bg: "#FFFFFF" },
-            dolphins: { primary: "#008E97", bg: "#FFFFFF" },
-            patriots: { primary: "#002244", bg: "#FFFFFF" },
-            jets: { primary: "#125740", bg: "#FFFFFF" },
-            ravens: { primary: "#241773", bg: "#FFFFFF" },
-            bengals: { primary: "#FB4F14", bg: "#000000" },
-            browns: { primary: "#311D00", bg: "#FFFFFF" },
-            steelers: { primary: "#FFB612", bg: "#101820" },
-            texans: { primary: "#03202F", bg: "#FFFFFF" },
-            colts: { primary: "#002C5F", bg: "#FFFFFF" },
-            jaguars: { primary: "#006778", bg: "#FFFFFF" },
-            titans: { primary: "#4B92DB", bg: "#FFFFFF" },
-            broncos: { primary: "#002244", bg: "#FB4F14" },
-            chiefs: { primary: "#E31837", bg: "#FFFFFF" },
-            raiders: { primary: "#000000", bg: "#A5ACAF" },
-            chargers: { primary: "#0080C6", bg: "#FFFFFF" },
-            cowboys: { primary: "#003594", bg: "#FFFFFF" },
-            giants: { primary: "#0B2265", bg: "#FFFFFF" },
-            eagles: { primary: "#004C54", bg: "#FFFFFF" },
-            commanders: { primary: "#5A1414", bg: "#FFFFFF" },
-            bears: { primary: "#0B162A", bg: "#C83803" },
-            lions: { primary: "#0076B6", bg: "#FFFFFF" },
+            vikings: { primary: "#4F2683", bg: "#FFC62F" },
+            lions: { primary: "#0076B6", bg: "#B0B7BC" },
             packers: { primary: "#203731", bg: "#FFB612" },
-            vikings: { primary: "#4F2683", bg: "#FFFFFF" },
-            falcons: { primary: "#A71930", bg: "#000000" },
-            panthers: { primary: "#0085CA", bg: "#000000" },
-            saints: { primary: "#D3BC8D", bg: "#101820" },
+            bears: { primary: "#0B162A", bg: "#C83803" },
+            chiefs: { primary: "#E31837", bg: "#FFB612" },
+            eagles: { primary: "#004C54", bg: "#A5ACAF" },
             buccaneers: { primary: "#D50A0A", bg: "#34302B" },
-            cardinals: { primary: "#97233F", bg: "#FFFFFF" },
-            rams: { primary: "#003594", bg: "#FFD100" },
-            fortyniners: { primary: "#AA0000", bg: "#B3995D" },
+            cowboys: { primary: "#003594", bg: "#869397" },
             seahawks: { primary: "#002244", bg: "#69BE28" }
         };
 
-        const bingoWords = [
-            "Running TD", "Coaches Challenge", "False Start", "Timeout", "Fumble",
-            "Punt", "Interception", "Made Field Goal", "Defensive Holding", "Sack",
-            "Passing TD", "Offsides", "Delay of Game", "Fair Catch", "Extra Point",
-            "Kick Off", "4th Down Try", "Coach Yells at Ref", "Helmet Pop-Off", "Pass Interference",
-            "Painted Face", "Shirtless Fan", "Personal Foul", "Injury Time Out", "Run Over 10yds",
-            "Pass 25+yds", "Offensive Holding", "Offensive PI", "Missed FG", "Missed XP",
-            "Any Turnover", "Turnover on Downs", "Penalty Declined", "Roughing Passer", "Face Mask",
-            "Unsportsmanlike", "Grounding", "First Down", "TD Dance", "Beer Ad",
-            "Car Ad", "Fast Food Ad", "Gambling Ad", "Gatorade Bath", "Mascot Shown",
-            "2 Min Warning", "Defensive TD", "Roughness", "Too Many Men", "Under Review",
-            "Excited Fan", "Blocked Kick", "QB Scramble"
-        ];
+        const bingoWords = ["Running TD", "Sack", "Interception", "Punt", "Fumble", "Made FG", "Timeout", "False Start", "Pass Interference", "Holding", "Touchdown Dance", "Coach Yells", "Fair Catch", "2-Min Warning", "Mascot Shown", "Review", "Sack", "QB Scramble", "Blocked Kick", "Shirtless Fan", "Beer Ad", "Penalty Declined", "Grounding", "Targeting", "Safety"];
 
         window.onload = () => {
             const urlParams = new URLSearchParams(window.location.search);
-            if(urlParams.has('theme')) document.getElementById('themeSelect').value = urlParams.get('theme');
             gameID = urlParams.get('game');
             initMultiplayer(gameID);
             applyTheme();
             generateCard();
         };
 
+        function applyTheme() {
+            const t = themes[document.getElementById('themeSelect').value] || themes.nfl;
+            const isDark = document.body.getAttribute('data-theme') === 'dark';
+            document.documentElement.style.setProperty('--primary-color', t.primary);
+            document.documentElement.style.setProperty('--bg-color', isDark ? '#1e1e1e' : t.bg);
+            
+            // Contrast fix for dark mode marks
+            const mark = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)';
+            document.documentElement.style.setProperty('--mark-color', mark);
+        }
+
         function initMultiplayer(id) {
             peer = new Peer();
-            const statusBox = document.getElementById('peer-status');
             peer.on('open', (myId) => {
                 if (id) {
                     isHost = false; gameID = id;
-                    statusBox.innerHTML = `📡 CONNECTED: <strong>${id}</strong>`;
                     conn = peer.connect(id);
-                    setupConn(conn);
+                    document.getElementById('peer-status').innerHTML = "CONNECTED: " + id;
                 } else {
                     isHost = true; gameID = myId;
-                    statusBox.innerHTML = `🏠 ROOM: <strong>${myId}</strong>`;
+                    document.getElementById('peer-status').innerHTML = "ROOM ID: " + myId;
                 }
             });
-            peer.on('connection', (c) => {
-                connections.push(c);
-                setupConn(c);
-            });
-        }
-
-        function setupConn(c) {
-            c.on('data', (data) => {
-                if (data.type === 'BINGO') {
-                    showBingoAlert(data.name);
-                    updateHistory(data.name);
-                    if (isHost) connections.forEach(client => { if (client.peer !== c.peer) client.send(data); });
-                }
-            });
-        }
-
-        function applyTheme() {
-            const t = themes[document.getElementById('themeSelect').value] || themes.nfl;
-            document.documentElement.style.setProperty('--primary-color', t.primary);
-            document.documentElement.style.setProperty('--bg-color', t.bg);
-            document.documentElement.style.setProperty('--mark-color', t.bg.toLowerCase() === '#ffffff' ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.25)');
         }
 
         function generateCard() {
@@ -309,8 +252,8 @@
                 cell.className = "cell";
                 cell.onclick = function() { this.classList.toggle('marked'); checkBingo(); };
                 const span = document.createElement('span');
-                if (i === 12) { span.innerText = "FREE"; cell.classList.add('marked'); }
-                else { span.innerText = shuffled.pop() || "---"; }
+                span.innerText = (i === 12) ? "FREE" : shuffled[i];
+                if(i===12) cell.classList.add('marked');
                 cell.appendChild(span);
                 grid.appendChild(cell);
             }
@@ -322,33 +265,15 @@
             const wins = [[0,1,2,3,4],[5,6,7,8,9],[10,11,12,13,14],[15,16,17,18,19],[20,21,22,23,24],[0,5,10,15,20],[1,6,11,16,21],[2,7,12,17,22],[3,8,13,18,23],[4,9,14,19,24],[0,6,12,18,24],[4,8,12,16,20]];
             if(wins.some(p => p.every(i => grid[i]))) {
                 const name = document.getElementById('playerName').value || "Someone";
-                showBingoAlert("YOU");
-                updateHistory("YOU");
-                const msg = { type: 'BINGO', name: name };
-                if (isHost) connections.forEach(c => c.send(msg));
-                else if (conn) conn.send(msg);
+                playSound(document.getElementById('themeSelect').value);
+                confetti({ particleCount: 150 });
+                document.getElementById('bingo-alert').style.display = 'block';
+                setTimeout(() => { document.getElementById('bingo-alert').style.display = 'none'; }, 5000);
             }
         }
 
-        function updateHistory(name) {
-            const list = document.getElementById('history-list');
-            if (list.innerHTML.includes("No wins recorded")) list.innerHTML = "";
-            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            const entry = document.createElement('div');
-            entry.className = "win-entry";
-            entry.innerHTML = `<span>🏆 <strong>${name}</strong></span> <span>${time}</span>`;
-            list.prepend(entry);
-        }
-
-        function showBingoAlert(name) {
-            confetti({ particleCount: 200, spread: 80, origin: { y: 0.6 } });
-            document.getElementById('winner-name').innerText = name.toUpperCase() + " CALLED BINGO!";
-            document.getElementById('bingo-alert').style.display = 'block';
-            setTimeout(() => { document.getElementById('bingo-alert').style.display = 'none'; }, 6000);
-        }
-
         function copyLink() {
-            const url = `${window.location.origin}${window.location.pathname}?theme=${document.getElementById('themeSelect').value}&game=${gameID}`;
+            const url = `${window.location.origin}${window.location.pathname}?game=${gameID}`;
             navigator.clipboard.writeText(url).then(() => alert("Invite link copied!"));
         }
 
