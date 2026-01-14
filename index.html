@@ -3,111 +3,115 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NFL Bingo 2026 - Mobile Ready</title>
+    <title>NFL Bingo 2026 - Live Edition</title>
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+
     <style>
         :root {
-            --cell-size: 110px; 
             --primary-color: #013369;
             --bg-color: #ffffff;
+            --cell-size: 110px;
             --mark-color: rgba(1, 51, 105, 0.1);
         }
 
         body { 
             font-family: 'Helvetica Neue', Arial, sans-serif; 
-            background: #f4f4f9; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            padding: 10px; 
-            margin: 0;
-            overflow-x: hidden;
+            background: #f4f7f9; display: flex; flex-direction: column; 
+            align-items: center; padding: 10px; margin: 0; overflow-x: hidden;
         }
-        
+
         #setup { 
-            background: white; padding: 20px; border-radius: 12px; width: 95%; max-width: 850px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1); margin-bottom: 20px; border-top: 5px solid var(--primary-color);
-            box-sizing: border-box;
+            background: white; padding: 25px; border-radius: 12px; width: 95%; max-width: 600px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05); margin-bottom: 20px; 
+            border-top: 6px solid var(--primary-color); box-sizing: border-box;
         }
 
-        .multiplayer-status {
-            background: #eef2f7; padding: 10px; border-radius: 8px; margin-bottom: 15px;
-            font-size: 0.85rem; border-left: 5px solid #3498db; color: #2c3e50;
+        .status-badge {
+            background: #eef2f7; padding: 12px; border-radius: 8px; margin-bottom: 20px;
+            font-size: 0.85rem; border-left: 4px solid #3498db; color: #2c3e50; font-weight: 600;
         }
 
-        textarea { width: 100%; height: 80px; margin: 10px 0; padding: 10px; border-radius: 6px; border: 1px solid #ddd; font-size: 0.9rem; box-sizing: border-box; }
+        .form-group { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+        label { display: block; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; margin-bottom: 5px; color: #7f8c8d; }
 
-        #printable-area { width: 100%; display: flex; justify-content: center; overflow-x: auto; }
-        
+        input, select, textarea { 
+            width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #dfe6e9; 
+            font-size: 0.9rem; box-sizing: border-box; outline-color: var(--primary-color);
+        }
+
+        textarea { height: 100px; resize: vertical; }
+
         .card-container { 
-            background: var(--bg-color); padding: 15px; border: 6px solid var(--primary-color); 
-            display: flex; flex-direction: column; align-items: center; text-align: center;
-            min-width: min-content;
+            background: var(--bg-color); padding: 20px; border: 6px solid var(--primary-color); 
+            display: flex; flex-direction: column; align-items: center; border-radius: 8px;
         }
 
-        .main-title { font-size: 1.4rem; color: var(--primary-color); margin: 0; text-transform: uppercase; font-weight: 900; letter-spacing: 1px; }
-        .bingo-header { display: grid; grid-template-columns: repeat(5, var(--cell-size)); gap: 5px; margin-top: 10px; }
-        .bingo-header span { font-size: 2.5rem; font-weight: 900; color: var(--primary-color); }
-        .bingo-grid { display: grid; grid-template-columns: repeat(5, var(--cell-size)); gap: 5px; margin-top: 5px; }
-        
+        .main-title { font-size: 1.5rem; color: var(--primary-color); margin: 0; font-weight: 900; letter-spacing: 2px; }
+        .bingo-header { display: grid; grid-template-columns: repeat(5, var(--cell-size)); gap: 5px; margin: 15px 0; }
+        .bingo-header span { font-size: 2.2rem; font-weight: 900; color: var(--primary-color); text-align: center; }
+        .bingo-grid { display: grid; grid-template-columns: repeat(5, var(--cell-size)); gap: 5px; }
+
         .cell { 
             width: var(--cell-size); height: var(--cell-size); border: 2px solid var(--primary-color); 
-            display: flex; align-items: center; justify-content: center; padding: 8px; box-sizing: border-box;
-            background: var(--bg-color); cursor: pointer; position: relative;
+            display: flex; align-items: center; justify-content: center; padding: 8px; 
+            box-sizing: border-box; background: var(--bg-color); cursor: pointer; 
+            position: relative; transition: all 0.2s ease;
         }
+
         .cell.marked { background-color: var(--mark-color) !important; }
-        .cell.marked::after { content: "🏈"; position: absolute; font-size: 2.5rem; opacity: 0.2; }
-        .cell span { font-weight: 800; color: var(--primary-color); line-height: 1.1; font-size: 0.75rem; text-transform: uppercase; pointer-events: none; word-wrap: break-word; }
+        .cell.marked::after { content: "🏈"; position: absolute; font-size: 2.2rem; opacity: 0.25; }
         
+        .cell span { 
+            font-weight: 700; color: var(--primary-color); line-height: 1.2; 
+            font-size: 0.75rem; text-transform: uppercase; text-align: center; pointer-events: none;
+        }
+
         .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
-        button { padding: 12px; cursor: pointer; font-weight: bold; border-radius: 6px; border: none; text-transform: uppercase; color: white; font-size: 0.8rem; }
+        button { padding: 12px; cursor: pointer; font-weight: bold; border-radius: 6px; border: none; text-transform: uppercase; color: white; }
         .btn-gen { background: #27ae60; }
         .btn-pdf { background: #e67e22; }
         .btn-share { background: #3498db; }
         .btn-reset { background: #95a5a6; }
 
-        /* MOBILE ADJUSTMENTS */
-        @media (max-width: 600px) {
-            :root { --cell-size: 18vw; }
-            .main-title { font-size: 1.1rem; }
-            .bingo-header span { font-size: 1.8rem; }
-            .cell span { font-size: 0.6rem; }
-            .cell.marked::after { font-size: 1.5rem; }
-            .setup-grid { grid-template-columns: 1fr !important; }
-            .controls { grid-template-columns: 1fr 1fr; }
+        #bingo-alert {
+            display: none; position: fixed; top: 15%; width: 85%; left: 7.5%; background: #f1c40f; 
+            color: #000; padding: 30px; border-radius: 20px; font-weight: 900; font-size: 1.8rem;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5); z-index: 9999; text-align: center; 
+            border: 6px solid #000; animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
-        #bingo-alert {
-            display: none; position: fixed; top: 20%; width: 80%; left: 10%; background: #f1c40f; color: #000; 
-            padding: 20px; border-radius: 20px; font-weight: 900; font-size: 1.5rem;
-            box-shadow: 0 15px 60px rgba(0,0,0,0.6); z-index: 2000; animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            text-align: center; border: 5px solid #000;
+        @keyframes popIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        @media (max-width: 600px) {
+            :root { --cell-size: 18vw; }
+            .main-title { font-size: 1.2rem; }
+            .bingo-header span { font-size: 1.6rem; }
+            .cell span { font-size: 0.6rem; }
         }
-        @keyframes popIn { from { transform: scale(0); } to { transform: scale(1); } }
     </style>
 </head>
 <body>
 
     <div id="bingo-alert">
-        🏈 TOUCHDOWN BINGO! 🏈<br>
-        <span id="winner-name" style="font-size: 1.1rem; display: block; margin-top: 10px;"></span>
+        🏈 TOUCHDOWN BINGO! 🏈
+        <span id="winner-name" style="font-size: 1rem; display: block; margin-top: 15px; opacity: 0.8;"></span>
     </div>
 
-    <div id="setup" class="no-print">
-        <h2 style="margin-top:0; font-size: 1.3rem;">🏟️ NFL Live Bingo</h2>
-        
-        <div class="multiplayer-status" id="peer-status">Connecting...</div>
+    <section id="setup">
+        <h2 style="margin: 0 0 15px 0; font-size: 1.4rem;">🏟️ NFL Game Day Bingo</h2>
+        <div class="status-badge" id="peer-status">Connecting to Official Review...</div>
 
-        <div class="setup-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+        <div class="form-group">
             <div>
-                <label style="font-size: 0.8rem;">Your Name:</label>
-                <input type="text" id="playerName" placeholder="Enter Name" style="width:100%; padding:8px; border-radius:5px; border:1px solid #ccc; box-sizing: border-box;">
+                <label for="playerName">Your Name</label>
+                <input type="text" id="playerName" placeholder="Player 1">
             </div>
             <div>
-                <label style="font-size: 0.8rem;">Team Theme:</label>
-                <select id="themeSelect" onchange="applyTheme()" style="width:100%; padding:8px; border-radius:5px; border:1px solid #ccc; box-sizing: border-box;">
+                <label for="themeSelect">Team Colors</label>
+                <select id="themeSelect" onchange="applyTheme()">
                     <option value="nfl">NFL Official</option>
                     <optgroup label="AFC East">
                         <option value="bills">Buffalo Bills</option>
@@ -121,56 +125,32 @@
                         <option value="browns">Cleveland Browns</option>
                         <option value="steelers">Pittsburgh Steelers</option>
                     </optgroup>
-                    <optgroup label="AFC South">
-                        <option value="texans">Houston Texans</option>
-                        <option value="colts">Indianapolis Colts</option>
-                        <option value="jaguars">Jacksonville Jaguars</option>
-                        <option value="titans">Tennessee Titans</option>
-                    </optgroup>
-                    <optgroup label="AFC West">
-                        <option value="broncos">Denver Broncos</option>
-                        <option value="chiefs">Kansas City Chiefs</option>
-                        <option value="raiders">Las Vegas Raiders</option>
-                        <option value="chargers">LA Chargers</option>
-                    </optgroup>
-                    <optgroup label="NFC East">
-                        <option value="cowboys">Dallas Cowboys</option>
-                        <option value="giants">NY Giants</option>
-                        <option value="eagles">Philadelphia Eagles</option>
-                        <option value="commanders">Washington Commanders</option>
-                    </optgroup>
                     <optgroup label="NFC North">
-                        <option value="bears">Chicago Bears</option>
                         <option value="lions">Detroit Lions</option>
                         <option value="packers">Green Bay Packers</option>
                         <option value="vikings">Minnesota Vikings</option>
-                    </optgroup>
-                    <optgroup label="NFC South">
-                        <option value="falcons">Atlanta Falcons</option>
-                        <option value="panthers">Carolina Panthers</option>
-                        <option value="saints">New Orleans Saints</option>
-                        <option value="buccaneers">Tampa Bay Buccaneers</option>
+                        <option value="bears">Chicago Bears</option>
                     </optgroup>
                     <optgroup label="NFC West">
-                        <option value="cardinals">Arizona Cardinals</option>
-                        <option value="rams">LA Rams</option>
                         <option value="fortyniners">San Francisco 49ers</option>
+                        <option value="rams">LA Rams</option>
                         <option value="seahawks">Seattle Seahawks</option>
+                        <option value="cardinals">AZ Cardinals</option>
                     </optgroup>
                 </select>
             </div>
         </div>
 
-        <label style="font-size: 0.8rem;">Game Events:</label>
+        <label for="wordInput">Bingo Events (One per line)</label>
         <textarea id="wordInput"></textarea>
 
         <div class="controls">
-            <button class="btn-gen" onclick="generateCard()">New Card</button>
-            <button class="btn-share" onclick="copyLink()">Invite 🔗</button>
-            <button class="btn-reset" onclick="resetBoard()">Clear</button>
-            <button class="btn-pdf" onclick="downloadPDF()">PDF</button>
+            <button class="btn-gen" onclick="generateCard()">Generate Card</button>
+            <button class="btn-share" onclick="copyLink()">Invite Link 🔗</button>
+            <button class="btn-pdf" onclick="downloadPDF()">Export PDF</button>
+            <button class="btn-reset" onclick="resetBoard()">Reset Card</button>
         </div>
-    </div>
+    </section>
 
     <div id="printable-area">
         <div id="card-output"></div>
@@ -185,41 +165,40 @@
             dolphins: { primary: "#F26A24", bg: "#008E97" },
             patriots: { primary: "#C60C30", bg: "#002244" },
             jets: { primary: "#003F2D", bg: "#ffffff" },
-            ravens: { primary: "#9E7C0C", bg: "#241773" },
-            bengals: { primary: "#000000", bg: "#FB4F14" },
+            ravens: { primary: "#241773", bg: "#9E7C0C" },
+            bengals: { primary: "#FB4F14", bg: "#000000" },
             browns: { primary: "#FF3C00", bg: "#311D00" },
             steelers: { primary: "#FFB612", bg: "#101820" },
-            texans: { primary: "#A71930", bg: "#03202F" },
-            colts: { primary: "#A5ACAF", bg: "#002C5F" },
-            jaguars: { primary: "#9F792C", bg: "#006778" },
-            titans: { primary: "#4B92DB", bg: "#0C2340" },
-            broncos: { primary: "#FB4F14", bg: "#002244" },
-            chiefs: { primary: "#FFB612", bg: "#E31837" },
-            raiders: { primary: "#A5ACAF", bg: "#000000" },
-            chargers: { primary: "#FFB612", bg: "#0073CF" },
-            cowboys: { primary: "#869397", bg: "#002244" },
-            giants: { primary: "#A71930", bg: "#0B2265" },
-            eagles: { primary: "#A5ACAF", bg: "#004C54" },
-            commanders: { primary: "#FFB612", bg: "#5A1414" },
-            bears: { primary: "#C83803", bg: "#0B162A" },
-            lions: { primary: "#B0B7BC", bg: "#0076B6" },
-            packers: { primary: "#FFB612", bg: "#203731" },
-            vikings: { primary: "#FFC62F", bg: "#4F2683" },
-            falcons: { primary: "#A71930", bg: "#000000" },
-            panthers: { primary: "#BFC0BF", bg: "#0085CA" },
-            saints: { primary: "#D3BC8D", bg: "#101820" },
-            buccaneers: { primary: "#34302B", bg: "#D50A0A" },
-            cardinals: { primary: "#FFB612", bg: "#97233F" },
-            rams: { primary: "#FFD100", bg: "#003594" },
+            lions: { primary: "#0076B6", bg: "#B0B7BC" },
+            packers: { primary: "#203731", bg: "#FFB612" },
+            vikings: { primary: "#4F2683", bg: "#FFC62F" },
+            bears: { primary: "#0B162A", bg: "#C83803" },
             fortyniners: { primary: "#B3995D", bg: "#AA0000" },
-            seahawks: { primary: "#69BE28", bg: "#002244" }
+            rams: { primary: "#FFD100", bg: "#003594" },
+            seahawks: { primary: "#69BE28", bg: "#002244" },
+            cardinals: { primary: "#FFB612", bg: "#97233F" }
         };
 
-        const defaultWords = ["Touchdown", "Field Goal", "Sack", "Interception", "Fumble", "Penalty", "Punt", "Timeout", "Challenge", "2-Min Warning", "Fair Catch", "Holding", "Pass Interference", "Blitz", "Blown Coverage", "Fan on TV", "Mascot Dance", "Beer Ad", "Car Ad", "First Down", "Safety", "Extra Point", "Review", "Incomplete Pass"];
+        const defaultWords = [
+            "Running Touchdown", "Coaches Challenge (Red Flag)", "False Start", "Timeout", "Fumble",
+            "Punt", "Interception", "Made Field Goal", "Defensive Holding", "Sack",
+            "Passing Touchdown", "Offsides", "Delay of Game", "Fair Catch", "Extra Point",
+            "Kick Off", "4th Down Attempt", "Coach Yells at Referee", "Helmet Pop-Off", "Defensive Pass Interference",
+            "Fan with Painted Face", "Shirtless Fan", "Personal Foul", "Injury Time Out", "Run Over 10 yards",
+            "Completion Over 25 yards", "Offensive Holding", "Offensive Pass Interference", "Missed Field Goal", "Missed Extra Point",
+            "Any Turnover", "Turnover on Downs", "Penalty Declined", "Roughing the Passer", "Face Mask",
+            "Unsportsmanlike Conduct", "Intentional Grounding", "First Down", "Touchdown Dance", "Beer Commercial",
+            "Car Commercial", "Fast Food Commercial", "Gambling Commercial", "Player Drinks Gatorade", "Team Mascot Shown",
+            "2 Minute Warning", "Defensive Touchdown", "Unnecessary Roughness", "Too Many Men on the Field", "Call Under Review",
+            "Overly Excited Fan", "Blocked Kick/Punt", "Throwing Touchdown"
+        ];
 
         window.onload = () => {
             const urlParams = new URLSearchParams(window.location.search);
-            document.getElementById('wordInput').value = urlParams.has('words') ? atob(urlParams.get('words')).split('|').join('\n') : defaultWords.join('\n');
+            document.getElementById('wordInput').value = urlParams.has('words') 
+                ? atob(urlParams.get('words')).split('|').join('\n') 
+                : defaultWords.join('\n');
+            
             if(urlParams.has('theme')) document.getElementById('themeSelect').value = urlParams.get('theme');
             
             gameID = urlParams.get('game');
@@ -234,12 +213,12 @@
             peer.on('open', (myId) => {
                 if (id) {
                     isHost = false; gameID = id;
-                    statusBox.innerHTML = `📡 Connected to Game: <strong>${id}</strong>`;
+                    statusBox.innerHTML = `📡 CONNECTED TO ROOM: <strong>${id}</strong>`;
                     conn = peer.connect(id);
                     setupConn(conn);
                 } else {
                     isHost = true; gameID = myId;
-                    statusBox.innerHTML = `🏠 Hosting Game: <strong>${myId}</strong>`;
+                    statusBox.innerHTML = `🏠 ROOM HOSTED AT: <strong>${myId}</strong>`;
                 }
             });
             peer.on('connection', (c) => {
@@ -257,18 +236,11 @@
             });
         }
 
-        function showBingoAlert(name) {
-            confetti({ particleCount: 200, spread: 80, origin: { y: 0.6 } });
-            document.getElementById('winner-name').innerText = name.toUpperCase() + " WON!";
-            document.getElementById('bingo-alert').style.display = 'block';
-            setTimeout(() => { document.getElementById('bingo-alert').style.display = 'none'; }, 6000);
-        }
-
         function applyTheme() {
             const t = themes[document.getElementById('themeSelect').value] || themes.nfl;
             document.documentElement.style.setProperty('--primary-color', t.primary);
             document.documentElement.style.setProperty('--bg-color', t.bg);
-            document.documentElement.style.setProperty('--mark-color', t.bg === '#ffffff' ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.2)');
+            document.documentElement.style.setProperty('--mark-color', t.bg === '#ffffff' ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.25)');
         }
 
         function generateCard() {
@@ -294,12 +266,19 @@
             const grid = Array.from(cells).map(c => c.classList.contains('marked'));
             const wins = [[0,1,2,3,4],[5,6,7,8,9],[10,11,12,13,14],[15,16,17,18,19],[20,21,22,23,24],[0,5,10,15,20],[1,6,11,16,21],[2,7,12,17,22],[3,8,13,18,23],[4,9,14,19,24],[0,6,12,18,24],[4,8,12,16,20]];
             if(wins.some(p => p.every(i => grid[i]))) {
-                const name = document.getElementById('playerName').value || "A Player";
+                const name = document.getElementById('playerName').value || "Someone";
                 showBingoAlert("YOU");
                 const msg = { type: 'BINGO', name: name };
                 if (isHost) connections.forEach(c => c.send(msg));
                 else if (conn) conn.send(msg);
             }
+        }
+
+        function showBingoAlert(name) {
+            confetti({ particleCount: 200, spread: 80, origin: { y: 0.6 } });
+            document.getElementById('winner-name').innerText = name.toUpperCase() + " CALLED BINGO!";
+            document.getElementById('bingo-alert').style.display = 'block';
+            setTimeout(() => { document.getElementById('bingo-alert').style.display = 'none'; }, 6000);
         }
 
         function copyLink() {
@@ -310,7 +289,7 @@
 
         function downloadPDF() {
             const element = document.getElementById('printable-area');
-            html2pdf().set({ margin: 0.2, filename: 'bingo.pdf', html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'letter' }}).from(element).save();
+            html2pdf().set({ margin: 0.2, filename: 'nfl-bingo.pdf', html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'letter' }}).from(element).save();
         }
 
         function resetBoard() {
