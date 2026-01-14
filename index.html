@@ -61,26 +61,26 @@
 
         .cell { 
             width: var(--cell-size); height: var(--cell-size); border: 2px solid var(--primary-color); 
-            display: flex; align-items: center; justify-content: center; padding: 6px; 
+            display: flex; align-items: center; justify-content: center; padding: 8px; 
             box-sizing: border-box; background: var(--bg-color); cursor: pointer; 
             position: relative; transition: all 0.2s ease;
-            overflow: hidden; /* Ensures nothing spills out */
+            overflow: hidden;
         }
 
         .cell.marked { background-color: var(--mark-color) !important; }
-        .cell.marked::after { content: "🏈"; position: absolute; font-size: 2.2rem; opacity: 0.25; }
+        .cell.marked::after { content: "🏈"; position: absolute; font-size: 2.5rem; opacity: 0.2; }
         
-        /* FIX FOR LONG WORDS */
+        /* RESPONSIVE FONT SCALING */
         .cell span { 
-            font-weight: 700; color: var(--primary-color); line-height: 1.1; 
-            font-size: 0.75rem; text-transform: uppercase; text-align: center; 
+            font-weight: 800; color: var(--primary-color); line-height: 1.1; 
+            text-transform: uppercase; text-align: center; 
             pointer-events: none;
-            word-wrap: break-word; /* Wraps long words */
+            word-wrap: break-word;
             overflow-wrap: break-word;
-            hyphens: auto; /* Adds hyphens for long words like Interception */
-            text-wrap: balance; /* Prevents awkward single words on new lines */
-            max-width: 100%;
-            display: block;
+            text-wrap: balance;
+            width: 100%;
+            /* Container Query logic via clamp */
+            font-size: clamp(0.55rem, 2.5cqw, 0.85rem); 
         }
 
         .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
@@ -103,10 +103,10 @@
         @keyframes popIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
         @media (max-width: 600px) {
-            :root { --cell-size: 17.5vw; }
+            :root { --cell-size: 18vw; }
             .main-title { font-size: 1.1rem; }
             .bingo-header span { font-size: 1.4rem; }
-            .cell span { font-size: 0.55rem; padding: 2px; }
+            .cell span { font-size: clamp(0.45rem, 3.5vw, 0.65rem); }
             .card-container { padding: 10px; border-width: 4px; }
         }
     </style>
@@ -198,9 +198,7 @@
         </div>
     </section>
 
-    <div id="printable-area">
-        <div id="card-output"></div>
-    </div>
+    <div id="card-output"></div>
 
     <script>
         let peer, conn, connections = [], isHost = true, gameID = null;
@@ -242,17 +240,17 @@
         };
 
         const bingoWords = [
-            "Running Touchdown", "Coaches Challenge", "False Start", "Timeout", "Fumble",
+            "Running TD", "Coaches Challenge", "False Start", "Timeout", "Fumble",
             "Punt", "Interception", "Made Field Goal", "Defensive Holding", "Sack",
-            "Passing Touchdown", "Offsides", "Delay of Game", "Fair Catch", "Extra Point",
-            "Kick Off", "4th Down Attempt", "Coach Yells at Ref", "Helmet Pop-Off", "Pass Interference",
+            "Passing TD", "Offsides", "Delay of Game", "Fair Catch", "Extra Point",
+            "Kick Off", "4th Down Try", "Coach Yells at Ref", "Helmet Pop-Off", "Pass Interference",
             "Painted Face", "Shirtless Fan", "Personal Foul", "Injury Time Out", "Run Over 10yds",
-            "Completion 25+yds", "Offensive Holding", "Offensive PI", "Missed FG", "Missed XP",
+            "Pass 25+yds", "Offensive Holding", "Offensive PI", "Missed FG", "Missed XP",
             "Any Turnover", "Turnover on Downs", "Penalty Declined", "Roughing Passer", "Face Mask",
-            "Unsportsmanlike", "Intentional Grounding", "First Down", "TD Dance", "Beer Ad",
-            "Car Ad", "Fast Food Ad", "Gambling Ad", "Player Gatorade", "Mascot Shown",
+            "Unsportsmanlike", "Grounding", "First Down", "TD Dance", "Beer Ad",
+            "Car Ad", "Fast Food Ad", "Gambling Ad", "Gatorade Bath", "Mascot Shown",
             "2 Min Warning", "Defensive TD", "Roughness", "Too Many Men", "Under Review",
-            "Excited Fan", "Blocked Kick", "Throwing TD"
+            "Excited Fan", "Blocked Kick", "QB Scramble"
         ];
 
         window.onload = () => {
@@ -338,7 +336,7 @@
             const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             const entry = document.createElement('div');
             entry.className = "win-entry";
-            entry.innerHTML = `<span>⭐ <strong>${name}</strong></span> <span>${time}</span>`;
+            entry.innerHTML = `<span>🏆 <strong>${name}</strong></span> <span>${time}</span>`;
             list.prepend(entry);
         }
 
