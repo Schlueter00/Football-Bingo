@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>NFL Bingo 2026 - Live Edition</title>
     
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 
@@ -23,30 +22,36 @@
             align-items: center; padding: 10px; margin: 0; overflow-x: hidden;
         }
 
+        .nfl-logo {
+            width: 60px; height: auto; margin-bottom: 10px;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+        }
+
         #setup { 
             background: white; padding: 25px; border-radius: 12px; width: 95%; max-width: 600px; 
             box-shadow: 0 10px 25px rgba(0,0,0,0.05); margin-bottom: 20px; 
             border-top: 6px solid var(--primary-color); box-sizing: border-box;
+            text-align: center;
         }
 
         .status-badge {
-            background: #eef2f7; padding: 12px; border-radius: 8px; margin-bottom: 20px;
+            background: #eef2f7; padding: 12px; border-radius: 8px; margin: 0 auto 20px auto;
             font-size: 0.85rem; border-left: 4px solid #3498db; color: #2c3e50; font-weight: 600;
+            display: inline-block; width: 100%; box-sizing: border-box;
         }
 
-        .form-group { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+        .form-group { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: left; }
         label { display: block; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; margin-bottom: 5px; color: #7f8c8d; }
 
-        input, select, textarea { 
+        input, select { 
             width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #dfe6e9; 
             font-size: 0.9rem; box-sizing: border-box; outline-color: var(--primary-color);
         }
 
-        textarea { height: 100px; resize: vertical; }
-
         .card-container { 
             background: var(--bg-color); padding: 20px; border: 6px solid var(--primary-color); 
             display: flex; flex-direction: column; align-items: center; border-radius: 8px;
+            transition: all 0.5s ease;
         }
 
         .main-title { font-size: 1.5rem; color: var(--primary-color); margin: 0; font-weight: 900; letter-spacing: 2px; }
@@ -72,9 +77,12 @@
         .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
         button { padding: 12px; cursor: pointer; font-weight: bold; border-radius: 6px; border: none; text-transform: uppercase; color: white; }
         .btn-gen { background: #27ae60; }
-        .btn-pdf { background: #e67e22; }
         .btn-share { background: #3498db; }
-        .btn-reset { background: #95a5a6; }
+        .btn-reset { background: #95a5a6; grid-column: span 2; }
+
+        #win-history { margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee; text-align: left; }
+        #win-history h3 { font-size: 0.8rem; text-transform: uppercase; color: #7f8c8d; margin-bottom: 10px; }
+        .win-entry { font-size: 0.85rem; padding: 5px 0; border-bottom: 1px dashed #eee; display: flex; justify-content: space-between; align-items: center; }
 
         #bingo-alert {
             display: none; position: fixed; top: 15%; width: 85%; left: 7.5%; background: #f1c40f; 
@@ -101,7 +109,8 @@
     </div>
 
     <section id="setup">
-        <h2 style="margin: 0 0 15px 0; font-size: 1.4rem;">🏟️ NFL Game Day Bingo</h2>
+        <img src="https://upload.wikimedia.org/wikipedia/en/a/a2/National_Football_League_logo.svg" alt="NFL Logo" class="nfl-logo">
+        <h2 style="margin: 0 0 15px 0; font-size: 1.4rem;">NFL Game Day Bingo</h2>
         <div class="status-badge" id="peer-status">Connecting to Official Review...</div>
 
         <div class="form-group">
@@ -110,7 +119,7 @@
                 <input type="text" id="playerName" placeholder="Player 1">
             </div>
             <div>
-                <label for="themeSelect">Team Colors</label>
+                <label for="themeSelect">Select Team</label>
                 <select id="themeSelect" onchange="applyTheme()">
                     <option value="nfl">NFL Official</option>
                     <optgroup label="AFC East">
@@ -125,30 +134,57 @@
                         <option value="browns">Cleveland Browns</option>
                         <option value="steelers">Pittsburgh Steelers</option>
                     </optgroup>
+                    <optgroup label="AFC South">
+                        <option value="texans">Houston Texans</option>
+                        <option value="colts">Indianapolis Colts</option>
+                        <option value="jaguars">Jacksonville Jaguars</option>
+                        <option value="titans">Tennessee Titans</option>
+                    </optgroup>
+                    <optgroup label="AFC West">
+                        <option value="broncos">Denver Broncos</option>
+                        <option value="chiefs">Kansas City Chiefs</option>
+                        <option value="raiders">Las Vegas Raiders</option>
+                        <option value="chargers">LA Chargers</option>
+                    </optgroup>
+                    <optgroup label="NFC East">
+                        <option value="cowboys">Dallas Cowboys</option>
+                        <option value="giants">NY Giants</option>
+                        <option value="eagles">Philadelphia Eagles</option>
+                        <option value="commanders">Washington Commanders</option>
+                    </optgroup>
                     <optgroup label="NFC North">
+                        <option value="bears">Chicago Bears</option>
                         <option value="lions">Detroit Lions</option>
                         <option value="packers">Green Bay Packers</option>
                         <option value="vikings">Minnesota Vikings</option>
-                        <option value="bears">Chicago Bears</option>
+                    </optgroup>
+                    <optgroup label="NFC South">
+                        <option value="falcons">Atlanta Falcons</option>
+                        <option value="panthers">Carolina Panthers</option>
+                        <option value="saints">New Orleans Saints</option>
+                        <option value="buccaneers">Tampa Bay Buccaneers</option>
                     </optgroup>
                     <optgroup label="NFC West">
-                        <option value="fortyniners">San Francisco 49ers</option>
+                        <option value="cardinals">Arizona Cardinals</option>
                         <option value="rams">LA Rams</option>
+                        <option value="fortyniners">San Francisco 49ers</option>
                         <option value="seahawks">Seattle Seahawks</option>
-                        <option value="cardinals">AZ Cardinals</option>
                     </optgroup>
                 </select>
             </div>
         </div>
 
-        <label for="wordInput">Bingo Events (One per line)</label>
-        <textarea id="wordInput"></textarea>
-
         <div class="controls">
-            <button class="btn-gen" onclick="generateCard()">Generate Card</button>
-            <button class="btn-share" onclick="copyLink()">Invite Link 🔗</button>
-            <button class="btn-pdf" onclick="downloadPDF()">Export PDF</button>
-            <button class="btn-reset" onclick="resetBoard()">Reset Card</button>
+            <button class="btn-gen" onclick="generateCard()">New Random Card</button>
+            <button class="btn-share" onclick="copyLink()">Invite Friends 🔗</button>
+            <button class="btn-reset" onclick="resetBoard()">Clear Marks Only</button>
+        </div>
+
+        <div id="win-history">
+            <h3>📺 Review Booth (Win History)</h3>
+            <div id="history-list">
+                <div style="color:#bdc3c7; font-size:0.8rem;">No wins recorded yet.</div>
+            </div>
         </div>
     </section>
 
@@ -161,46 +197,57 @@
 
         const themes = {
             nfl: { primary: "#013369", bg: "#ffffff" },
-            bills: { primary: "#C60C30", bg: "#00338D" },
-            dolphins: { primary: "#F26A24", bg: "#008E97" },
-            patriots: { primary: "#C60C30", bg: "#002244" },
-            jets: { primary: "#003F2D", bg: "#ffffff" },
-            ravens: { primary: "#241773", bg: "#9E7C0C" },
+            bills: { primary: "#00338D", bg: "#FFFFFF" },
+            dolphins: { primary: "#008E97", bg: "#FFFFFF" },
+            patriots: { primary: "#002244", bg: "#FFFFFF" },
+            jets: { primary: "#125740", bg: "#FFFFFF" },
+            ravens: { primary: "#241773", bg: "#FFFFFF" },
             bengals: { primary: "#FB4F14", bg: "#000000" },
-            browns: { primary: "#FF3C00", bg: "#311D00" },
+            browns: { primary: "#311D00", bg: "#FFFFFF" },
             steelers: { primary: "#FFB612", bg: "#101820" },
-            lions: { primary: "#0076B6", bg: "#B0B7BC" },
-            packers: { primary: "#203731", bg: "#FFB612" },
-            vikings: { primary: "#4F2683", bg: "#FFC62F" },
+            texans: { primary: "#03202F", bg: "#FFFFFF" },
+            colts: { primary: "#002C5F", bg: "#FFFFFF" },
+            jaguars: { primary: "#006778", bg: "#FFFFFF" },
+            titans: { primary: "#4B92DB", bg: "#FFFFFF" },
+            broncos: { primary: "#002244", bg: "#FB4F14" },
+            chiefs: { primary: "#E31837", bg: "#FFFFFF" },
+            raiders: { primary: "#000000", bg: "#A5ACAF" },
+            chargers: { primary: "#0080C6", bg: "#FFFFFF" },
+            cowboys: { primary: "#003594", bg: "#FFFFFF" },
+            giants: { primary: "#0B2265", bg: "#FFFFFF" },
+            eagles: { primary: "#004C54", bg: "#FFFFFF" },
+            commanders: { primary: "#5A1414", bg: "#FFFFFF" },
             bears: { primary: "#0B162A", bg: "#C83803" },
-            fortyniners: { primary: "#B3995D", bg: "#AA0000" },
-            rams: { primary: "#FFD100", bg: "#003594" },
-            seahawks: { primary: "#69BE28", bg: "#002244" },
-            cardinals: { primary: "#FFB612", bg: "#97233F" }
+            lions: { primary: "#0076B6", bg: "#FFFFFF" },
+            packers: { primary: "#203731", bg: "#FFB612" },
+            vikings: { primary: "#4F2683", bg: "#FFFFFF" },
+            falcons: { primary: "#A71930", bg: "#000000" },
+            panthers: { primary: "#0085CA", bg: "#000000" },
+            saints: { primary: "#D3BC8D", bg: "#101820" },
+            buccaneers: { primary: "#D50A0A", bg: "#34302B" },
+            cardinals: { primary: "#97233F", bg: "#FFFFFF" },
+            rams: { primary: "#003594", bg: "#FFD100" },
+            fortyniners: { primary: "#AA0000", bg: "#B3995D" },
+            seahawks: { primary: "#002244", bg: "#69BE28" }
         };
 
-        const defaultWords = [
-            "Running Touchdown", "Coaches Challenge (Red Flag)", "False Start", "Timeout", "Fumble",
+        const bingoWords = [
+            "Running Touchdown", "Coaches Challenge", "False Start", "Timeout", "Fumble",
             "Punt", "Interception", "Made Field Goal", "Defensive Holding", "Sack",
             "Passing Touchdown", "Offsides", "Delay of Game", "Fair Catch", "Extra Point",
-            "Kick Off", "4th Down Attempt", "Coach Yells at Referee", "Helmet Pop-Off", "Defensive Pass Interference",
-            "Fan with Painted Face", "Shirtless Fan", "Personal Foul", "Injury Time Out", "Run Over 10 yards",
-            "Completion Over 25 yards", "Offensive Holding", "Offensive Pass Interference", "Missed Field Goal", "Missed Extra Point",
-            "Any Turnover", "Turnover on Downs", "Penalty Declined", "Roughing the Passer", "Face Mask",
-            "Unsportsmanlike Conduct", "Intentional Grounding", "First Down", "Touchdown Dance", "Beer Commercial",
-            "Car Commercial", "Fast Food Commercial", "Gambling Commercial", "Player Drinks Gatorade", "Team Mascot Shown",
-            "2 Minute Warning", "Defensive Touchdown", "Unnecessary Roughness", "Too Many Men on the Field", "Call Under Review",
-            "Overly Excited Fan", "Blocked Kick/Punt", "Throwing Touchdown"
+            "Kick Off", "4th Down Attempt", "Coach Yells at Ref", "Helmet Pop-Off", "Pass Interference",
+            "Painted Face", "Shirtless Fan", "Personal Foul", "Injury Time Out", "Run Over 10yds",
+            "Completion 25+yds", "Offensive Holding", "Offensive PI", "Missed FG", "Missed XP",
+            "Any Turnover", "Turnover on Downs", "Penalty Declined", "Roughing Passer", "Face Mask",
+            "Unsportsmanlike", "Intentional Grounding", "First Down", "TD Dance", "Beer Ad",
+            "Car Ad", "Fast Food Ad", "Gambling Ad", "Player Gatorade", "Mascot Shown",
+            "2 Min Warning", "Defensive TD", "Roughness", "Too Many Men", "Under Review",
+            "Excited Fan", "Blocked Kick", "Throwing TD"
         ];
 
         window.onload = () => {
             const urlParams = new URLSearchParams(window.location.search);
-            document.getElementById('wordInput').value = urlParams.has('words') 
-                ? atob(urlParams.get('words')).split('|').join('\n') 
-                : defaultWords.join('\n');
-            
             if(urlParams.has('theme')) document.getElementById('themeSelect').value = urlParams.get('theme');
-            
             gameID = urlParams.get('game');
             initMultiplayer(gameID);
             applyTheme();
@@ -213,12 +260,12 @@
             peer.on('open', (myId) => {
                 if (id) {
                     isHost = false; gameID = id;
-                    statusBox.innerHTML = `📡 CONNECTED TO ROOM: <strong>${id}</strong>`;
+                    statusBox.innerHTML = `📡 CONNECTED: <strong>${id}</strong>`;
                     conn = peer.connect(id);
                     setupConn(conn);
                 } else {
                     isHost = true; gameID = myId;
-                    statusBox.innerHTML = `🏠 ROOM HOSTED AT: <strong>${myId}</strong>`;
+                    statusBox.innerHTML = `🏠 ROOM: <strong>${myId}</strong>`;
                 }
             });
             peer.on('connection', (c) => {
@@ -231,6 +278,7 @@
             c.on('data', (data) => {
                 if (data.type === 'BINGO') {
                     showBingoAlert(data.name);
+                    updateHistory(data.name);
                     if (isHost) connections.forEach(client => { if (client.peer !== c.peer) client.send(data); });
                 }
             });
@@ -240,12 +288,11 @@
             const t = themes[document.getElementById('themeSelect').value] || themes.nfl;
             document.documentElement.style.setProperty('--primary-color', t.primary);
             document.documentElement.style.setProperty('--bg-color', t.bg);
-            document.documentElement.style.setProperty('--mark-color', t.bg === '#ffffff' ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.25)');
+            document.documentElement.style.setProperty('--mark-color', t.bg === '#ffffff' || t.bg === '#FFFFFF' ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.25)');
         }
 
         function generateCard() {
-            const lines = document.getElementById('wordInput').value.split('\n').filter(l => l.trim() !== "");
-            const shuffled = [...lines].sort(() => 0.5 - Math.random());
+            const shuffled = [...bingoWords].sort(() => 0.5 - Math.random());
             const output = document.getElementById('card-output');
             output.innerHTML = `<div class="card-container"><h1 class="main-title">FOOTBALL BINGO</h1><div class="bingo-header"><span>B</span><span>I</span><span>N</span><span>G</span><span>O</span></div><div class="bingo-grid" id="main-grid"></div></div>`;
             const grid = document.getElementById('main-grid');
@@ -268,10 +315,21 @@
             if(wins.some(p => p.every(i => grid[i]))) {
                 const name = document.getElementById('playerName').value || "Someone";
                 showBingoAlert("YOU");
+                updateHistory("YOU");
                 const msg = { type: 'BINGO', name: name };
                 if (isHost) connections.forEach(c => c.send(msg));
                 else if (conn) conn.send(msg);
             }
+        }
+
+        function updateHistory(name) {
+            const list = document.getElementById('history-list');
+            if (list.innerHTML.includes("No wins recorded")) list.innerHTML = "";
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const entry = document.createElement('div');
+            entry.className = "win-entry";
+            entry.innerHTML = `<span>⭐ <strong>${name}</strong></span> <span>${time}</span>`;
+            list.prepend(entry);
         }
 
         function showBingoAlert(name) {
@@ -282,14 +340,8 @@
         }
 
         function copyLink() {
-            const words = btoa(document.getElementById('wordInput').value.split('\n').filter(l => l.trim() !== "").join('|'));
-            const url = `${window.location.origin}${window.location.pathname}?words=${words}&theme=${document.getElementById('themeSelect').value}&game=${gameID}`;
+            const url = `${window.location.origin}${window.location.pathname}?theme=${document.getElementById('themeSelect').value}&game=${gameID}`;
             navigator.clipboard.writeText(url).then(() => alert("Invite link copied!"));
-        }
-
-        function downloadPDF() {
-            const element = document.getElementById('printable-area');
-            html2pdf().set({ margin: 0.2, filename: 'nfl-bingo.pdf', html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'letter' }}).from(element).save();
         }
 
         function resetBoard() {
