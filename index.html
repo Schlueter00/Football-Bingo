@@ -11,7 +11,7 @@
     <style>
         :root {
             --primary-color: #013369;
-            --accent-color: #D50A0A;
+            --secondary-color: #D50A0A; /* Default NFL Red */
             --body-bg: #f4f7f9;
             --text-color: #2c3e50;
             --mark-color: rgba(1, 51, 105, 0.2);
@@ -50,7 +50,7 @@
 
         #player-list { display: flex; flex-wrap: wrap; gap: 10px; font-size: 0.9rem; font-weight: 600; }
         .player-entry { background: #f8f9fa; padding: 6px 12px; border-radius: 4px; border-left: 4px solid var(--primary-color); }
-        .player-entry .win-tag { color: var(--accent-color); font-weight: 900; margin-left: 8px; }
+        .player-entry .win-tag { color: var(--secondary-color); font-weight: 900; margin-left: 8px; }
 
         .card-container { 
             padding: 10px; border: 6px solid var(--primary-color); 
@@ -70,14 +70,15 @@
             font-size: 1.4rem;
             text-transform: uppercase;
             letter-spacing: 2px;
-            border-bottom: 4px solid var(--accent-color);
+            /* Updated to use secondary color variable */
+            border-bottom: 4px solid var(--secondary-color);
         }
         
         .bingo-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; width: 100%; }
 
         .cell { 
             aspect-ratio: 1 / 1; border: 1px solid var(--primary-color); 
-            display: flex; align-items: center; justify-content: center; padding: 3px; /* Minimal padding for more space */
+            display: flex; align-items: center; justify-content: center; padding: 3px; 
             background: white; cursor: pointer; position: relative; overflow: hidden;
             text-align: center; transition: transform 0.1s ease;
         }
@@ -99,7 +100,7 @@
             font-weight: 900; color: var(--primary-color); line-height: 1.0; 
             text-transform: uppercase; width: 100%; pointer-events: none;
             display: block; position: relative; z-index: 2;
-            word-wrap: normal; /* Disabled hyphenation/forced breaks */
+            word-wrap: normal;
             overflow: hidden;
         }
 
@@ -110,13 +111,13 @@
         .form-group { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 10px;}
         input, select { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-size: 0.9rem; }
 
-        #win-pending-status { color: var(--accent-color); font-weight: 900; display: none; margin: 10px 0; text-align: center; font-size: 1rem; }
+        #win-pending-status { color: var(--secondary-color); font-weight: 900; display: none; margin: 10px 0; text-align: center; font-size: 1rem; }
 
         #bingo-modal {
             display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
             width: 90%; max-width: 500px; background: var(--primary-color); color: white;
             padding: 40px; border-radius: 24px; text-align: center; z-index: 10000;
-            border: 8px solid var(--accent-color);
+            border: 8px solid var(--secondary-color);
         }
     </style>
 </head>
@@ -250,14 +251,12 @@
                 const text = (i === 12) ? "FREE" : shuffled[i];
                 span.innerText = text;
                 
-                // --- CUSTOM SCALING WITHOUT HYPHENS ---
                 const words = text.split(' ');
                 const longestWord = Math.max(...words.map(w => w.length));
 
                 if (text === "FREE") {
                     span.style.fontSize = "1.5rem";
                 } else if (longestWord > 13) {
-                    // Specific fix for "Unsportsmanlike" or "Interference"
                     span.style.fontSize = "0.72rem";
                 } else if (longestWord > 10) {
                     span.style.fontSize = "0.7rem";
@@ -315,27 +314,57 @@
         }
 
         function applyTheme() {
+            // Expanded theme mapping with primary and secondary colors
             const themes = { 
-                nfl: "#013369", ravens: "#241773", bengals: "#FB4F14", browns: "#311D00", steelers: "#FFB612",
-                bills: "#00338D", dolphins: "#008E97", patriots: "#002244", jets: "#125740",
-                texans: "#03202F", colts: "#002C5F", jaguars: "#006778", titans: "#4B92DB",
-                broncos: "#FB4F14", chiefs: "#E31837", raiders: "#000000", chargers: "#0080C6",
-                bears: "#0B162A", lions: "#0076B6", packers: "#203731", vikings: "#4F2683",
-                cowboys: "#003594", eagles: "#004C54", giants: "#0B2265", commanders: "#5A1414",
-                falcons: "#A71930", panthers: "#0085CA", saints: "#D3BC8D", buccaneers: "#D50A0A",
-                cardinals: "#97233F", rams: "#003594", "49ers": "#AA0000", seahawks: "#002244"
+                nfl: {p: "#013369", s: "#D50A0A"},
+                ravens: {p: "#241773", s: "#9E7C0C"},
+                bengals: {p: "#FB4F14", s: "#000000"},
+                browns: {p: "#311D00", s: "#FF3C00"},
+                steelers: {p: "#101820", s: "#FFB612"},
+                bills: {p: "#00338D", s: "#C60C30"},
+                dolphins: {p: "#008E97", s: "#FC4C02"},
+                patriots: {p: "#002244", s: "#C60C30"},
+                jets: {p: "#125740", s: "#FFFFFF"},
+                texans: {p: "#03202F", s: "#A71930"},
+                colts: {p: "#002C5F", s: "#A2AAAD"},
+                jaguars: {p: "#006778", s: "#D7A22A"},
+                titans: {p: "#0C2340", s: "#4B92DB"},
+                broncos: {p: "#002244", s: "#FB4F14"},
+                chiefs: {p: "#E31837", s: "#FFB81C"},
+                raiders: {p: "#000000", s: "#A5ACAF"},
+                chargers: {p: "#0080C6", s: "#FFC20E"},
+                bears: {p: "#0B162A", s: "#C83803"},
+                lions: {p: "#0076B6", s: "#B0B7BC"},
+                packers: {p: "#203731", s: "#FFB612"},
+                vikings: {p: "#4F2683", s: "#FFCC33"},
+                cowboys: {p: "#003594", s: "#869397"},
+                eagles: {p: "#004C54", s: "#A5ACAF"},
+                giants: {p: "#0B2265", s: "#A71930"},
+                commanders: {p: "#5A1414", s: "#FFB612"},
+                falcons: {p: "#A71930", s: "#000000"},
+                panthers: {p: "#0085CA", s: "#101820"},
+                saints: {p: "#D3BC8D", s: "#101820"},
+                buccaneers: {p: "#D50A0A", s: "#34302B"},
+                cardinals: {p: "#97233F", s: "#000000"},
+                rams: {p: "#003594", s: "#FFA300"},
+                "49ers": {p: "#AA0000", s: "#B3995D"},
+                seahawks: {p: "#002244", s: "#69BE28"}
             };
+
             const teamSelect = document.getElementById('themeSelect');
-            const color = themes[teamSelect.value] || "#013369";
+            const selection = themes[teamSelect.value] || themes.nfl;
             
-            document.documentElement.style.setProperty('--primary-color', color);
-            document.getElementById('setup').style.borderTopColor = color;
+            document.documentElement.style.setProperty('--primary-color', selection.p);
+            document.documentElement.style.setProperty('--secondary-color', selection.s);
+            document.getElementById('setup').style.borderTopColor = selection.p;
             
             const header = document.getElementById('teamHeader');
             if(header) {
                 header.innerText = teamSelect.options[teamSelect.selectedIndex].text;
-                header.style.backgroundColor = color;
+                header.style.backgroundColor = selection.p;
+                header.style.borderBottomColor = selection.s;
             }
+            updateScoreboard(); // Refresh colors in scoreboard
         }
     </script>
 </body>
