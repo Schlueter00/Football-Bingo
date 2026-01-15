@@ -256,17 +256,17 @@
 
                 if (text === "FREE") {
                     span.style.fontSize = "1.5rem";
-                } else if (longestWord > 13) {
+                } else if (longestWord > 12) {
                     // Specific fix for "Unsportsmanlike" or "Interference"
-                    span.style.fontSize = "0.6rem";
+                    span.style.fontSize = "0.72rem";
                 } else if (longestWord > 10) {
-                    span.style.fontSize = "0.7rem";
-                } else if (text.length <= 10) {
-                    span.style.fontSize = "1.0rem";
-                } else if (text.length <= 18) {
                     span.style.fontSize = "0.8rem";
+                } else if (text.length <= 10) {
+                    span.style.fontSize = "1.1rem";
+                } else if (text.length <= 18) {
+                    span.style.fontSize = "0.9rem";
                 } else {
-                    span.style.fontSize = "0.7rem";
+                    span.style.fontSize = "0.78rem";
                 }
 
                 if(i===12) cell.classList.add('marked');
