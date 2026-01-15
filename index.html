@@ -96,14 +96,15 @@
 
         .free-logo { width: 70%; max-height: 70%; object-fit: contain; z-index: 2; }
 
-        /* Restored Scaling Classes from Code 1 */
         .f-tiny { font-size: clamp(5px, 9cqw, 8px); letter-spacing: -0.2px; }
         .f-xs { font-size: clamp(7px, 11cqw, 10px); }
         .f-sm { font-size: clamp(9px, 13cqw, 12px); }
         .f-md { font-size: clamp(10px, 16cqw, 14px); }
         .f-lg { font-size: clamp(14px, 22cqw, 19px); }
 
-        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+        /* Host Controls specific visibility */
+        #host-only-controls { display: none; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+        
         button { padding: 14px; cursor: pointer; font-weight: bold; border-radius: 8px; border: none; text-transform: uppercase; color: white; font-size: 0.8rem; }
         .btn-gen { background: #27ae60; } .btn-share { background: #3498db; }
         
@@ -164,7 +165,8 @@
                 </select>
             </div>
         </div>
-        <div class="controls">
+        
+        <div id="host-only-controls">
             <button class="btn-gen" onclick="generateCard()">New Card</button>
             <button class="btn-share" onclick="copyLink()">Invite Friends 🔗</button>
         </div>
@@ -198,9 +200,11 @@
                 if (id) { 
                     isHost = false; gameID = id; connectToPeer(id); 
                     document.getElementById('peer-status').innerText = "Connected to Host: " + id;
+                    document.getElementById('host-only-controls').style.display = 'none'; // Explicitly hide for guests
                 } else { 
                     isHost = true; gameID = myId; 
                     document.getElementById('peer-status').innerText = "Hosting Room: " + myId;
+                    document.getElementById('host-only-controls').style.display = 'grid'; // Show for host
                 }
                 updateScoreboard();
             });
@@ -291,23 +295,15 @@
                 } else {
                     const text = shuffled[i];
                     const span = document.createElement('span');
-                    
-                    // RESTORED SCALING LOGIC
                     const words = text.split(' ');
                     const longestWordLength = Math.max(...words.map(w => w.length));
                     const totalLength = text.length;
 
-                    if (longestWordLength >= 14 || totalLength > 24) {
-                        span.className = "f-tiny";
-                    } else if (longestWordLength >= 11 || totalLength > 18) {
-                        span.className = "f-xs";
-                    } else if (totalLength > 12) {
-                        span.className = "f-sm";
-                    } else if (totalLength > 7) {
-                        span.className = "f-md";
-                    } else {
-                        span.className = "f-lg";
-                    }
+                    if (longestWordLength >= 14 || totalLength > 24) { span.className = "f-tiny"; }
+                    else if (longestWordLength >= 11 || totalLength > 18) { span.className = "f-xs"; }
+                    else if (totalLength > 12) { span.className = "f-sm"; }
+                    else if (totalLength > 7) { span.className = "f-md"; }
+                    else { span.className = "f-lg"; }
 
                     span.innerText = text;
                     cell.appendChild(span);
