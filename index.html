@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NFL Bingo 2026 - All-Player Sync</title>
+    <title>NFL Bingo 2026 - Clean Sync Edition</title>
     
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
@@ -92,7 +92,6 @@
         .f-tiny { font-size: clamp(5px, 8cqw, 7px); }
         .f-xs { font-size: clamp(7px, 10cqw, 9px); }
         .f-sm { font-size: clamp(9px, 12cqw, 11px); }
-        .f-md { font-size: clamp(10px, 15cqw, 13px); }
 
         #host-only-controls { display: none; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
         button { padding: 14px; cursor: pointer; font-weight: bold; border-radius: 8px; border: none; text-transform: uppercase; color: white; font-size: 0.8rem; }
@@ -103,21 +102,13 @@
         #bingo-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 85%; max-width: 400px; background: var(--primary-color); color: var(--secondary-color); padding: 25px; border-radius: 15px; text-align: center; z-index: 10000; border: 6px solid var(--secondary-color); }
 
         #player-list { display: flex; flex-wrap: wrap; gap: 10px; }
-        .player-entry { background: rgba(0,0,0,0.03); padding: 8px 12px; border-radius: 6px; font-size: 0.85rem; border: 1px solid var(--border-ui); display: flex; align-items: center; gap: 8px; }
+        .player-entry { background: rgba(0,0,0,0.03); padding: 8px 12px; border-radius: 6px; font-size: 0.85rem; border: 1px solid var(--border-ui); display: flex; align-items: center; gap: 8px; transition: all 0.3s ease; }
         .win-pill { background: var(--primary-color); color: white; padding: 2px 6px; border-radius: 4px; font-weight: 900; font-size: 0.75rem; }
 
-        .admin-board-mini { display: inline-block; margin: 8px; text-align: center; position: relative; }
+        .admin-board-mini { display: inline-block; margin: 8px; text-align: center; position: relative; transition: all 0.5s ease; }
         .mini-grid { display: grid; grid-template-columns: repeat(5, 7px); gap: 1.5px; background: #ccc; padding: 1.5px; border-radius: 2px; }
         .mini-dot { width: 7px; height: 7px; background: white; }
         .mini-dot.hit { background: var(--primary-color); }
-
-        .kick-btn { 
-            position: absolute; top: -5px; right: -5px; 
-            background: red; color: white; border-radius: 50%; 
-            width: 14px; height: 14px; font-size: 8px; 
-            display: flex; align-items: center; justify-content: center; 
-            cursor: pointer; border: 1px solid white; z-index: 10;
-        }
     </style>
 </head>
 <body>
@@ -168,7 +159,7 @@
     <div class="app-section">
         <div style="font-size:0.7rem; font-weight:900; opacity:0.6; margin-bottom:10px; text-transform: uppercase;">Real-Time Board Tracker</div>
         <div id="admin-boards"></div>
-        <div style="font-size:0.7rem; font-weight:900; opacity:0.6; margin:15px 0 10px 0; text-transform: uppercase;">Scoreboard</div>
+        <div style="font-size:0.7rem; font-weight:900; opacity:0.6; margin:15px 0 10px 0; text-transform: uppercase;">Scoreboard (Ranked)</div>
         <div id="player-list"></div>
     </div>
 
@@ -195,81 +186,63 @@
         function initMultiplayer(id) {
             peer = new Peer(null, peerConfig);
             peer.on('open', (myId) => {
-                players[myId] = { name: document.getElementById('playerName').value, wins: 0, board: Array(25).fill(false) };
-                if (id) { 
-                    isHost = false; 
-                    gameID = id; 
-                    connectToPeer(id); // Connect to the room host
-                } else { 
-                    isHost = true; 
-                    gameID = myId; 
-                    document.getElementById('host-only-controls').style.display = 'grid'; 
-                }
+                players[myId] = { id: myId, name: document.getElementById('playerName').value, wins: 0, board: Array(25).fill(false) };
+                if (id) { isHost = false; gameID = id; connectToPeer(id); } 
+                else { isHost = true; gameID = myId; document.getElementById('host-only-controls').style.display = 'grid'; }
                 document.getElementById('peer-status').innerText = isHost ? "Hosting" : "Playing";
                 updateScoreboard();
             });
             peer.on('connection', setupConn);
         }
 
-        function connectToPeer(id) { 
-            if (connections[id]) return; 
-            let conn = peer.connect(id, {reliable: true}); 
-            setupConn(conn); 
-        }
+        function connectToPeer(id) { if (connections[id]) return; let conn = peer.connect(id, {reliable: true}); setupConn(conn); }
 
         function setupConn(conn) {
-            conn.on('open', () => { 
-                connections[conn.peer] = conn; 
-                syncData(); 
-            });
-
+            conn.on('open', () => { connections[conn.peer] = conn; syncData(); });
             conn.on('data', (data) => {
                 if (data.type === 'discovery' && !isHost) {
-                    // Host sent us a list of other players. Connect to them all!
-                    data.peerList.forEach(pid => {
-                        if (pid !== peer.id && !connections[pid]) connectToPeer(pid);
-                    });
+                    data.peerList.forEach(pid => { if (pid !== peer.id && !connections[pid]) connectToPeer(pid); });
                 }
-
                 if (data.type === 'sync') { 
                     Object.assign(players, data.players); 
+                    cleanupGhostPlayers();
                     updateScoreboard(); 
-                    
-                    // If I'm the host, tell everyone about the new peer list
                     if (isHost) broadcastDiscovery();
                 }
-                
                 if (data.type === 'win') {
                     showWinModal(data.name);
-                    // Host relays win to everyone
                     if(isHost) {
-                        Object.values(connections).forEach(c => {
-                            if(c.open && c.peer !== conn.peer) c.send({ type: 'win', name: data.name });
-                        });
+                        Object.values(connections).forEach(c => { if(c.open && c.peer !== conn.peer) c.send({ type: 'win', name: data.name }); });
                     }
                 }
-                
                 if (data.type === 'reset_round') { 
                     document.getElementById('bingo-modal').style.display = 'none'; 
+                    // Clear local logic immediately
+                    Object.keys(players).forEach(id => players[id].board = Array(25).fill(false));
                     generateCard(); 
                 }
             });
-
             conn.on('close', () => { delete connections[conn.peer]; delete players[conn.peer]; updateScoreboard(); });
+        }
+
+        function cleanupGhostPlayers() {
+            Object.keys(players).forEach(pid => {
+                if (pid !== peer.id && !connections[pid] && pid !== gameID) {
+                    delete players[pid];
+                }
+            });
         }
 
         function broadcastDiscovery() {
             const pList = Object.keys(players);
-            Object.values(connections).forEach(c => {
-                if(c.open) c.send({ type: 'discovery', peerList: pList });
-            });
+            Object.values(connections).forEach(c => { if(c.open) c.send({ type: 'discovery', peerList: pList }); });
         }
 
         function syncData() {
             const myName = document.getElementById('playerName').value;
             const cells = document.querySelectorAll('.cell');
             const myBoard = Array.from(cells).map(c => c.classList.contains('marked'));
-            players[peer.id] = { name: myName, wins: wins, board: myBoard };
+            players[peer.id] = { id: peer.id, name: myName, wins: wins, board: myBoard };
             Object.values(connections).forEach(c => { if (c.open) c.send({ type: 'sync', players }); });
             updateScoreboard();
         }
@@ -278,17 +251,17 @@
             const list = document.getElementById('player-list'), admin = document.getElementById('admin-boards');
             if(!list || !admin) return;
             
-            const activeIds = Object.keys(players);
-            const maxWins = Math.max(...activeIds.map(id => players[id].wins));
+            const sortedPlayers = Object.values(players).sort((a, b) => b.wins - a.wins);
+            const maxWins = sortedPlayers.length > 0 ? sortedPlayers[0].wins : 0;
 
-            list.innerHTML = activeIds.map(id => {
-                const isLeader = (players[id].wins === maxWins && maxWins > 0);
-                return `<div class="player-entry"><strong>${players[id].name} ${isLeader ? '🏆' : ''}</strong> <span class="win-pill">${players[id].wins}W</span></div>`;
+            list.innerHTML = sortedPlayers.map(p => {
+                const isLeader = (p.wins === maxWins && maxWins > 0);
+                return `<div class="player-entry"><strong>${p.name} ${isLeader ? '🏆' : ''}</strong> <span class="win-pill">${p.wins}W</span></div>`;
             }).join('');
 
-            admin.innerHTML = activeIds.map(id => {
-                const miniGrid = players[id].board.map(hit => `<div class="mini-dot ${hit ? 'hit' : ''}"></div>`).join('');
-                return `<div class="admin-board-mini"><div style="font-size:8px; font-weight:bold; margin-bottom:2px;">${players[id].name}</div><div class="mini-grid">${miniGrid}</div></div>`;
+            admin.innerHTML = sortedPlayers.map(p => {
+                const miniGrid = p.board.map(hit => `<div class="mini-dot ${hit ? 'hit' : ''}"></div>`).join('');
+                return `<div class="admin-board-mini"><div style="font-size:8px; font-weight:bold; margin-bottom:2px;">${p.name}</div><div class="mini-grid">${miniGrid}</div></div>`;
             }).join('');
         }
 
@@ -298,7 +271,6 @@
             const themeKey = document.getElementById('themeSelect').value, logoUrl = teamLogos[themeKey] || teamLogos.nfl;
             output.innerHTML = `<div class="team-display-header">${document.getElementById('themeSelect').options[document.getElementById('themeSelect').selectedIndex].text}</div><div class="bingo-grid" id="main-grid"></div>`;
             const grid = document.getElementById('main-grid');
-            
             for (let i = 0; i < 25; i++) {
                 const cell = document.createElement('div');
                 cell.className = "cell";
@@ -316,7 +288,7 @@
                 }
                 grid.appendChild(cell);
             }
-            syncData();
+            syncData(); // Sync immediately after generating new card to clear boards for everyone
         }
 
         function checkBingo() {
@@ -371,6 +343,8 @@
 
         function hostRequestsReset() {
             if (!isHost) return;
+            // Clear all mini-boards locally first
+            Object.keys(players).forEach(id => players[id].board = Array(25).fill(false));
             Object.values(connections).forEach(c => { if(c.open) c.send({ type: 'reset_round' }); });
             document.getElementById('bingo-modal').style.display = 'none'; 
             generateCard();
