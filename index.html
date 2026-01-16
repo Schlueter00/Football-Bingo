@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NFL Bingo 2026 - Auto-Free Edition</title>
+    <title>NFL Bingo 2026 - Global Sync Edition</title>
     
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
@@ -65,7 +65,6 @@
             overflow: hidden; container-type: size; transition: background-color 0.2s ease;
         }
 
-        /* Logo Stamp for normal cells */
         .cell.marked:not(.free-space)::before {
             content: "";
             position: absolute;
@@ -79,7 +78,7 @@
         }
 
         .cell.marked:not(.free-space) { background-color: #2ecc71; } 
-        .cell.free-space { background-color: var(--primary-color); cursor: default; }
+        .cell.free-space { background-color: #2ecc71; cursor: default; }
 
         .cell span { 
             font-weight: 900; color: var(--secondary-color); 
@@ -211,8 +210,22 @@
             conn.on('open', () => { connections[conn.peer] = conn; syncData(); });
             conn.on('data', (data) => {
                 if (data.type === 'sync') { Object.assign(players, data.players); cleanGhosts(); updateScoreboard(); }
-                if (data.type === 'win') showWinModal(data.name);
-                if (data.type === 'reset_round') { document.getElementById('bingo-modal').style.display = 'none'; generateCard(); }
+                
+                if (data.type === 'win') {
+                    // Show modal locally
+                    showWinModal(data.name);
+                    // If I am the host, relay this win to everyone else
+                    if(isHost) {
+                        Object.values(connections).forEach(c => {
+                            if(c.open && c.peer !== conn.peer) c.send({ type: 'win', name: data.name });
+                        });
+                    }
+                }
+                
+                if (data.type === 'reset_round') { 
+                    document.getElementById('bingo-modal').style.display = 'none'; 
+                    generateCard(); 
+                }
             });
             conn.on('close', () => removePlayer(conn.peer));
         }
@@ -239,7 +252,16 @@
             if(!list || !admin) return;
             cleanGhosts();
             const activeIds = Object.keys(players);
-            list.innerHTML = activeIds.map(id => `<div class="player-entry"><strong>${players[id].name}</strong> <span class="win-pill">${players[id].wins}W</span></div>`).join('');
+            
+            // Calculate leader for trophy
+            const maxWins = Math.max(...activeIds.map(id => players[id].wins));
+
+            list.innerHTML = activeIds.map(id => {
+                const isLeader = (players[id].wins === maxWins && maxWins > 0);
+                return `<div class="player-entry"><strong>${players[id].name} ${isLeader ? '🏆' : ''}</strong> <span class="win-pill">${players[id].wins}W</span></div>`;
+            }).join('');
+
+            // Everyone sees all mini-boards
             admin.innerHTML = activeIds.map(id => {
                 const miniGrid = players[id].board.map(hit => `<div class="mini-dot ${hit ? 'hit' : ''}"></div>`).join('');
                 const kick = (isHost && id !== peer.id) ? `<div class="kick-btn" onclick="removePlayer('${id}')">X</div>` : '';
@@ -253,12 +275,13 @@
             const themeKey = document.getElementById('themeSelect').value, logoUrl = teamLogos[themeKey] || teamLogos.nfl;
             output.innerHTML = `<div class="team-display-header">${document.getElementById('themeSelect').options[document.getElementById('themeSelect').selectedIndex].text}</div><div class="bingo-grid" id="main-grid"></div>`;
             const grid = document.getElementById('main-grid');
+            
             for (let i = 0; i < 25; i++) {
                 const cell = document.createElement('div');
                 cell.className = "cell";
                 
                 if (i === 12) {
-                    // AUTO-CHECK FREE SPACE
+                    // Change 1: Auto-click middle screen
                     cell.classList.add('free-space', 'marked');
                     cell.innerHTML = `<img src="${logoUrl}" class="free-logo"> <span class="f-sm">FREE</span>`;
                 } else {
@@ -292,10 +315,19 @@
         }
 
         function cancelBingo() { clearInterval(countdownInterval); winTimeout = null; document.getElementById('win-countdown-box').style.display = 'none'; }
+        
         function triggerWin() {
-            wins++; syncData();
-            Object.values(connections).forEach(c => { if(c.open) c.send({ type: 'win', name: players[peer.id].name }); });
-            showWinModal(players[peer.id].name); cancelBingo();
+            wins++; 
+            const myName = document.getElementById('playerName').value;
+            syncData(); // Update wins locally and send to host
+            
+            // Notify other players
+            Object.values(connections).forEach(c => { 
+                if(c.open) c.send({ type: 'win', name: myName }); 
+            });
+            
+            showWinModal(myName); 
+            cancelBingo();
         }
 
         function showWinModal(name) {
@@ -324,7 +356,8 @@
         function hostRequestsReset() {
             if (!isHost) return;
             Object.values(connections).forEach(c => { if(c.open) c.send({ type: 'reset_round' }); });
-            document.getElementById('bingo-modal').style.display = 'none'; generateCard();
+            document.getElementById('bingo-modal').style.display = 'none'; 
+            generateCard();
         }
     </script>
 </body>
