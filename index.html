@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NFL Bingo 2026 - Global Sync Edition</title>
+    <title>NFL Bingo 2026 - All-Player Sync</title>
     
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
@@ -196,25 +196,52 @@
             peer = new Peer(null, peerConfig);
             peer.on('open', (myId) => {
                 players[myId] = { name: document.getElementById('playerName').value, wins: 0, board: Array(25).fill(false) };
-                if (id) { isHost = false; gameID = id; connectToPeer(id); } 
-                else { isHost = true; gameID = myId; document.getElementById('host-only-controls').style.display = 'grid'; }
+                if (id) { 
+                    isHost = false; 
+                    gameID = id; 
+                    connectToPeer(id); // Connect to the room host
+                } else { 
+                    isHost = true; 
+                    gameID = myId; 
+                    document.getElementById('host-only-controls').style.display = 'grid'; 
+                }
                 document.getElementById('peer-status').innerText = isHost ? "Hosting" : "Playing";
                 updateScoreboard();
             });
             peer.on('connection', setupConn);
         }
 
-        function connectToPeer(id) { let conn = peer.connect(id, {reliable: true}); setupConn(conn); }
+        function connectToPeer(id) { 
+            if (connections[id]) return; 
+            let conn = peer.connect(id, {reliable: true}); 
+            setupConn(conn); 
+        }
 
         function setupConn(conn) {
-            conn.on('open', () => { connections[conn.peer] = conn; syncData(); });
+            conn.on('open', () => { 
+                connections[conn.peer] = conn; 
+                syncData(); 
+            });
+
             conn.on('data', (data) => {
-                if (data.type === 'sync') { Object.assign(players, data.players); cleanGhosts(); updateScoreboard(); }
+                if (data.type === 'discovery' && !isHost) {
+                    // Host sent us a list of other players. Connect to them all!
+                    data.peerList.forEach(pid => {
+                        if (pid !== peer.id && !connections[pid]) connectToPeer(pid);
+                    });
+                }
+
+                if (data.type === 'sync') { 
+                    Object.assign(players, data.players); 
+                    updateScoreboard(); 
+                    
+                    // If I'm the host, tell everyone about the new peer list
+                    if (isHost) broadcastDiscovery();
+                }
                 
                 if (data.type === 'win') {
-                    // Show modal locally
                     showWinModal(data.name);
-                    // If I am the host, relay this win to everyone else
+                    // Host relays win to everyone
                     if(isHost) {
                         Object.values(connections).forEach(c => {
                             if(c.open && c.peer !== conn.peer) c.send({ type: 'win', name: data.name });
@@ -227,16 +254,16 @@
                     generateCard(); 
                 }
             });
-            conn.on('close', () => removePlayer(conn.peer));
+
+            conn.on('close', () => { delete connections[conn.peer]; delete players[conn.peer]; updateScoreboard(); });
         }
 
-        function cleanGhosts() {
-            Object.keys(players).forEach(id => {
-                if (id !== peer.id && !connections[id] && id !== gameID) delete players[id];
+        function broadcastDiscovery() {
+            const pList = Object.keys(players);
+            Object.values(connections).forEach(c => {
+                if(c.open) c.send({ type: 'discovery', peerList: pList });
             });
         }
-
-        function removePlayer(id) { delete connections[id]; delete players[id]; updateScoreboard(); }
 
         function syncData() {
             const myName = document.getElementById('playerName').value;
@@ -250,10 +277,8 @@
         function updateScoreboard() {
             const list = document.getElementById('player-list'), admin = document.getElementById('admin-boards');
             if(!list || !admin) return;
-            cleanGhosts();
-            const activeIds = Object.keys(players);
             
-            // Calculate leader for trophy
+            const activeIds = Object.keys(players);
             const maxWins = Math.max(...activeIds.map(id => players[id].wins));
 
             list.innerHTML = activeIds.map(id => {
@@ -261,11 +286,9 @@
                 return `<div class="player-entry"><strong>${players[id].name} ${isLeader ? '🏆' : ''}</strong> <span class="win-pill">${players[id].wins}W</span></div>`;
             }).join('');
 
-            // Everyone sees all mini-boards
             admin.innerHTML = activeIds.map(id => {
                 const miniGrid = players[id].board.map(hit => `<div class="mini-dot ${hit ? 'hit' : ''}"></div>`).join('');
-                const kick = (isHost && id !== peer.id) ? `<div class="kick-btn" onclick="removePlayer('${id}')">X</div>` : '';
-                return `<div class="admin-board-mini">${kick}<div style="font-size:8px; font-weight:bold; margin-bottom:2px;">${players[id].name}</div><div class="mini-grid">${miniGrid}</div></div>`;
+                return `<div class="admin-board-mini"><div style="font-size:8px; font-weight:bold; margin-bottom:2px;">${players[id].name}</div><div class="mini-grid">${miniGrid}</div></div>`;
             }).join('');
         }
 
@@ -279,9 +302,7 @@
             for (let i = 0; i < 25; i++) {
                 const cell = document.createElement('div');
                 cell.className = "cell";
-                
                 if (i === 12) {
-                    // Change 1: Auto-click middle screen
                     cell.classList.add('free-space', 'marked');
                     cell.innerHTML = `<img src="${logoUrl}" class="free-logo"> <span class="f-sm">FREE</span>`;
                 } else {
@@ -319,13 +340,8 @@
         function triggerWin() {
             wins++; 
             const myName = document.getElementById('playerName').value;
-            syncData(); // Update wins locally and send to host
-            
-            // Notify other players
-            Object.values(connections).forEach(c => { 
-                if(c.open) c.send({ type: 'win', name: myName }); 
-            });
-            
+            syncData();
+            Object.values(connections).forEach(c => { if(c.open) c.send({ type: 'win', name: myName }); });
             showWinModal(myName); 
             cancelBingo();
         }
