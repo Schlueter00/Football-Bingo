@@ -100,13 +100,12 @@
             background-image: var(--team-logo-url); background-size: 80%; background-repeat: no-repeat; background-position: center; opacity: 0.3; z-index: 1;
         }
         
-        /* Updated: Background color is green and font color is black when marked */
         .cell.marked:not(.free-space) { background-color: #2ecc71; color: #000000; } 
         .cell.free-space { background-color: #2ecc71; color: #000000; }
         
         .cell span { 
             font-weight: 900; 
-            color: inherit; /* Inherit the color from the cell parent */
+            color: inherit; 
             text-transform: uppercase; 
             z-index: 2; 
             line-height: 0.95; 
@@ -118,7 +117,6 @@
             width: 100%;
         }
         
-        /* Unmarked cells stay white */
         .cell:not(.marked) span { color: var(--secondary-color); }
 
         .free-logo { width: 70%; max-height: 70%; object-fit: contain; z-index: 2; }
@@ -164,7 +162,6 @@
         <button id="host-score-reset-btn" class="btn-reset-scores" onclick="hostRequestsScoreReset()">Reset Leaderboard</button>
 
         <div id="win-countdown-box">
-            🏈 BINGO! Broadcasting in <span id="timer-count">5</span>s...
             <button class="btn-cancel" onclick="cancelBingo()">STOP</button>
         </div>
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 8px;">
@@ -245,14 +242,21 @@
         window.onload = () => {
             loadLocalState();
             const urlParams = new URLSearchParams(window.location.search);
-            gameID = urlParams.get('game');
-            initMultiplayer(gameID);
+            const joinedGameID = urlParams.get('game');
+            initMultiplayer(joinedGameID);
             applyTheme();
         };
 
         function saveLocalState() {
             const markedIndices = Array.from(document.querySelectorAll('.cell')).map(c => c.classList.contains('marked'));
-            localStorage.setItem('nfl_bingo_state', JSON.stringify({ name: document.getElementById('playerName').value, theme: document.getElementById('themeSelect').value, wins, boardWords: currentBoardWords, marked: markedIndices }));
+            localStorage.setItem('nfl_bingo_state', JSON.stringify({ 
+                name: document.getElementById('playerName').value, 
+                theme: document.getElementById('themeSelect').value, 
+                wins, 
+                boardWords: currentBoardWords, 
+                marked: markedIndices,
+                persistedGameID: isHost ? gameID : null // Save the host's ID
+            }));
         }
 
         function loadLocalState() {
@@ -265,7 +269,20 @@
 
         function initMultiplayer(id) {
             if (peer) peer.destroy();
-            peer = new Peer(null);
+
+            // LOGIC CHANGE: Check for persisted Host ID in LocalStorage
+            const saved = JSON.parse(localStorage.getItem('nfl_bingo_state') || '{}');
+            const persistedHostID = saved.persistedGameID;
+
+            // If we are NOT joining via a link, but we have a saved Host ID, try to reuse it
+            let requestedID = null;
+            if (!id && persistedHostID) {
+                requestedID = persistedHostID;
+            }
+
+            // Create Peer. If requestedID is null, PeerJS generates a random one.
+            peer = new Peer(requestedID);
+
             peer.on('open', (myId) => {
                 if (id) { 
                     isHost = false; 
@@ -277,21 +294,27 @@
                     document.getElementById('host-only-controls').style.display = 'grid'; 
                     document.getElementById('host-new-id-btn').style.display = 'block';
                     document.getElementById('host-score-reset-btn').style.display = 'block';
+                    saveLocalState(); // Save the ID immediately
                 }
                 document.getElementById('peer-status').innerText = isHost ? "Hosting" : "Playing";
                 document.getElementById('sub-game-id').innerText = `ID: ${gameID}`;
                 syncData();
             });
+
             peer.on('connection', setupConn);
+
+            peer.on('error', (err) => {
+                if (err.type === 'unavailable-id' && isHost) {
+                    // Fallback if the saved ID is truly stuck (rare)
+                    console.log("ID taken, generating new one...");
+                    initMultiplayer(null); 
+                }
+            });
         }
 
         function regenerateGameID() {
             if (confirm("Generating a new Game ID will clear all wins and disconnect players. Continue?")) {
-                const currentState = JSON.parse(localStorage.getItem('nfl_bingo_state') || '{}');
-                currentState.wins = 0;
-                currentState.marked = [];
-                currentState.boardWords = [];
-                localStorage.setItem('nfl_bingo_state', JSON.stringify(currentState));
+                localStorage.removeItem('nfl_bingo_state'); // Clear everything to start fresh
                 window.location.href = window.location.pathname; 
             }
         }
@@ -329,7 +352,8 @@
                 theme: saved.theme || "nfl",
                 wins: saved.wins || 0,
                 boardWords: [],
-                marked: []
+                marked: [],
+                persistedGameID: saved.persistedGameID
             };
             localStorage.setItem('nfl_bingo_state', JSON.stringify(newState));
             document.getElementById('bingo-modal').style.display = 'none';
@@ -440,7 +464,7 @@
 
         function startWinCountdown() {
             timeLeft = 5; 
-            document.getElementById('timer-count').innerText = timeLeft;
+            document.getElementById('win-countdown-box').innerHTML = `🏈 BINGO! Broadcasting in <span id="timer-count">${timeLeft}</span>s... <button class="btn-cancel" onclick="cancelBingo()">STOP</button>`;
             document.getElementById('win-countdown-box').style.display = 'block';
             countdownInterval = setInterval(() => {
                 timeLeft--; 
